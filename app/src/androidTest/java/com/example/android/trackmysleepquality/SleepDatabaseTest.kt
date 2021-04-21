@@ -16,18 +16,23 @@
 
 package com.example.android.trackmysleepquality
 
+import android.content.Context
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
 import com.example.android.trackmysleepquality.database.SleepNight
-import org.junit.Assert.assertEquals
 import org.junit.After
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -42,9 +47,10 @@ class SleepDatabaseTest {
     private lateinit var sleepDao: SleepDatabaseDao
     private lateinit var db: SleepDatabase
 
+    private lateinit var context: Context
     @Before
     fun createDb() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context = InstrumentationRegistry.getInstrumentation().targetContext
         // Using an in-memory database because the information stored here disappears when the
         // process is killed.
         db = Room.inMemoryDatabaseBuilder(context, SleepDatabase::class.java)
@@ -69,5 +75,60 @@ class SleepDatabaseTest {
         assertEquals(tonight?.sleepQuality, -1)
     }
 
+    @Test
+    @Throws(Exception::class)
+    fun insertAndUpdateNight(){
+        val night = SleepNight()
+        sleepDao.insert(night)
 
+        val lastNight = sleepDao.getTonight()
+        assertNotNull(lastNight)
+        assertEquals(lastNight?.sleepQuality, -1)
+        lastNight?.let {
+            it.sleepQuality = 2
+            sleepDao.update(lastNight)
+        }
+
+        val updatedLastNight = sleepDao.getTonight()
+        assertEquals(updatedLastNight?.sleepQuality, 2)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun getLastNightByID(){
+        val night = SleepNight()
+        sleepDao.insert(night)
+
+        val insertedNight = sleepDao.get(1)
+        assertEquals(1L, insertedNight?.nightID)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun clearAllNights(){
+        val night = SleepNight()
+        sleepDao.insert(night)
+
+        val lastNight = sleepDao.getTonight()
+        assertNotNull(lastNight)
+
+        sleepDao.clear()
+        val noNight = sleepDao.getAllNights()
+//        assertEquals(0, noNight.size)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun getAllNights(){
+        val night = SleepNight()
+        val night2 = SleepNight()
+
+        sleepDao.insert(night)
+        sleepDao.insert(night2)
+
+        val list = sleepDao.getAllNights()
+//        assertEquals(2, list?.size)
+
+
+    }
 }
