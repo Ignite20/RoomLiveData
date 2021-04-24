@@ -22,8 +22,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.android.trackmysleepquality.R
+import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.databinding.FragmentSleepQualityBinding
+import kotlinx.coroutines.InternalCoroutinesApi
 
 /**
  * Fragment that displays a list of clickable icons,
@@ -38,6 +42,7 @@ class SleepQualityFragment : Fragment() {
      *
      * This function uses DataBindingUtil to inflate R.layout.fragment_sleep_quality.
      */
+    @InternalCoroutinesApi
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
 
@@ -46,6 +51,20 @@ class SleepQualityFragment : Fragment() {
                 inflater, R.layout.fragment_sleep_quality, container, false)
 
         val application = requireNotNull(this.activity).application
+        val args = SleepQualityFragmentArgs.fromBundle(arguments)
+        val dataSource = SleepDatabase.getInstance(application).sleepDatabaseDao
+
+        val viewModelFactor = SleepQualityViewModelFactory(args.sleepNightKey, dataSource)
+        val viewModel = ViewModelProvider(this, viewModelFactor).get(SleepQualityViewModel::class.java)
+
+        binding.sleepQualityViewModel = viewModel
+
+        viewModel.navigateToSleepTracker.observe(viewLifecycleOwner, { isQualified ->
+            if(isQualified == true){
+                findNavController().navigate(SleepQualityFragmentDirections.actionSleepQualityFragmentToSleepTrackerFragment())
+                viewModel.doneNavigating()
+            }
+        })
 
         return binding.root
     }
