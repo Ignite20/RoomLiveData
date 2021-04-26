@@ -37,11 +37,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
  */
 class SleepTrackerFragment : Fragment() {
 
-    /**
-     * Called when the Fragment is ready to display content to the screen.
-     *
-     * This function uses DataBindingUtil to inflate R.layout.fragment_sleep_quality.
-     */
+    val adapter = SleepNightAdapter()
 
     @InternalCoroutinesApi
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -61,23 +57,45 @@ class SleepTrackerFragment : Fragment() {
         binding.lifecycleOwner = this
         binding.sleepTrackerViewModel = sleepTrackerViewModel
 
-        sleepTrackerViewModel.navigateToSleepQuality.observe(viewLifecycleOwner, { night ->
-            night?.let {
-                findNavController().navigate(SleepTrackerFragmentDirections.actionSleepTrackerFragmentToSleepQualityFragment(night.nightID))
-                sleepTrackerViewModel.doneNavigating()
-            }
-        })
+        binding.sleepList.adapter = adapter
 
-        sleepTrackerViewModel.showSnackbarEvent.observe(viewLifecycleOwner, {
+        setupObservers(viewModel = sleepTrackerViewModel)
+
+        return binding.root
+    }
+
+    private fun setupObservers(viewModel: SleepTrackerViewModel){
+        navigateToSleepQualityObserver(viewModel)
+        snackBarObserver(viewModel)
+        sleepNightsObserver(viewModel)
+    }
+
+    private fun snackBarObserver(viewModel: SleepTrackerViewModel) {
+        viewModel.showSnackbarEvent.observe(viewLifecycleOwner, {
             if(it == true) {
                 Snackbar.make(
                         requireActivity().findViewById(android.R.id.content),
                         getString(R.string.cleared_message),
                         Snackbar.LENGTH_SHORT).show()
-                sleepTrackerViewModel.doneShowingSnackbar()
+                viewModel.doneShowingSnackbar()
             }
         })
+    }
 
-        return binding.root
+    private fun navigateToSleepQualityObserver(viewModel: SleepTrackerViewModel) {
+        viewModel.navigateToSleepQuality.observe(viewLifecycleOwner, { night ->
+            night?.let {
+                findNavController().navigate(SleepTrackerFragmentDirections.actionSleepTrackerFragmentToSleepQualityFragment(night.nightID))
+                viewModel.doneNavigating()
+            }
+        })
+    }
+
+    private fun sleepNightsObserver(viewModel: SleepTrackerViewModel){
+        viewModel.nights.observe(viewLifecycleOwner, {
+            it?.let {
+                adapter.data = it
+            }
+        })
     }
 }
