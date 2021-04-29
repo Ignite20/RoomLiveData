@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -38,7 +39,11 @@ import kotlinx.coroutines.InternalCoroutinesApi
  */
 class SleepTrackerFragment : Fragment() {
 
-    val adapter = SleepNightAdapter()
+    private lateinit var sleepTrackerViewModel: SleepTrackerViewModel
+    private val adapter = SleepNightAdapter(SleepNightListener {
+        Toast.makeText(requireContext(), "$it", Toast.LENGTH_LONG).show()
+        sleepTrackerViewModel.onSleepNightClicked(it)
+    })
 
     @InternalCoroutinesApi
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -54,7 +59,7 @@ class SleepTrackerFragment : Fragment() {
         val viewModelFactory = SleepTrackerViewModelFactory(dataSource, application)
 
         // Get a reference to the ViewModel associated with this fragment.
-        val sleepTrackerViewModel = ViewModelProvider(this, viewModelFactory).get(SleepTrackerViewModel::class.java)
+        sleepTrackerViewModel = ViewModelProvider(this, viewModelFactory).get(SleepTrackerViewModel::class.java)
         binding.lifecycleOwner = this
         binding.sleepTrackerViewModel = sleepTrackerViewModel
 
@@ -71,6 +76,16 @@ class SleepTrackerFragment : Fragment() {
         navigateToSleepQualityObserver(viewModel)
         snackBarObserver(viewModel)
         sleepNightsObserver(viewModel)
+        navigateToSleepDetailObserver(viewModel)
+    }
+
+    private fun navigateToSleepDetailObserver(viewModel: SleepTrackerViewModel) {
+        viewModel.navigateToSleepDetail.observe(viewLifecycleOwner, { night ->
+            night?.let {
+                findNavController().navigate(SleepTrackerFragmentDirections.actionSleepTrackerFragmentToSleepDetailFragment(it))
+                viewModel.onSleepDetailNavigated()
+            }
+        })
     }
 
     private fun snackBarObserver(viewModel: SleepTrackerViewModel) {

@@ -27,12 +27,18 @@ import kotlinx.coroutines.launch
  * ViewModel for SleepTrackerFragment.
  */
 class SleepTrackerViewModel(val database: SleepDatabaseDao, application: Application) : AndroidViewModel(application) {
+
+
     private var tonight = MutableLiveData<SleepNight?>()
     val nights = database.getAllNights()
 
     private val _navigateToSleepQuality = MutableLiveData<SleepNight?>()
     val navigateToSleepQuality: LiveData<SleepNight?>
         get() = _navigateToSleepQuality
+
+    private val _navigateToSleepDetail = MutableLiveData<Long?>()
+    val navigateToSleepDetail : LiveData<Long?>
+        get() = _navigateToSleepDetail
 
     private var _showSnackbarEvent = MutableLiveData<Boolean>()
     val showSnackbarEvent : LiveData<Boolean>
@@ -104,6 +110,14 @@ class SleepTrackerViewModel(val database: SleepDatabaseDao, application: Applica
 
     fun doneNavigating(){
         _navigateToSleepQuality.value = null
+    }
+
+    fun onSleepNightClicked(id: Long){
+        _navigateToSleepDetail.value = id
+    }
+
+    fun onSleepDetailNavigated(){
+        _navigateToSleepDetail.value = null
     }
 
     private suspend fun insert(newNight: SleepNight){
